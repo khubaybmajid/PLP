@@ -6,16 +6,19 @@ const TokenSchema = new mongoose.Schema({
   expiresAt: Date
 });
 
-const TokenModel = mongoose.model('Token', TokenSchema);
+const TokenModel = mongoose.model('ApiTokens', TokenSchema);
 
 const saveToken = async (accessToken, refreshToken, expiresAt) => {
-  await TokenModel.deleteMany({}); // Delete all existing tokens (because we only store one)
+  await TokenModel.deleteMany({}); 
   const token = new TokenModel({ accessToken, refreshToken, expiresAt });
   await token.save();
 };
 
 const getToken = async () => {
-  return await TokenModel.findOne({});
+  const token = await TokenModel.findOne({});
+  console.log("Retrieved token: ", token);
+  return token;
 };
+
 
 module.exports = { saveToken, getToken };

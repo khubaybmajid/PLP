@@ -28,6 +28,7 @@ const fetchAndSaveOrders = async () => {
     const uberOrders = await useUberAPI(apiEndpoint);
     await saveOrdersToMongoDB(uberOrders);
     console.log('Successfully fetched and saved Uber orders.');
+    console.log("Received Uber orders: ", uberOrders);
   } catch (error) {
     console.error('Failed to fetch and save Uber orders:', error);
   }

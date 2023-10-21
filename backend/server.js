@@ -5,6 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const { connectDB } = require('./config/db');
 const cron = require('node-cron');
+const { callback, refreshAccessToken, useUberAPI } = require('./utils/uber'); // Import from uber.js
 
 // Import your router and the fetchAndSaveUberOrders function from uberRoutes
 const { router: uberRouter, fetchAndSaveOrders: fetchAndSaveUberOrders } = require('./routes/uberRoutes');
@@ -21,9 +22,20 @@ app.use(express.json({ extended: false }));
 // Define Routes
 app.use('/api/uber', uberRouter);  // Use the router we imported as uberRouter
 
+// Add the /callback route from the uber.js file
+app.get('/callback', callback);
+
+app.get('/', (req, res) => {
+  res.send('Server is up and running');
+});
+
+
 // Start the server
-const PORT = process.env.PORT || 5004;
+const PORT = 5004;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+
+console.log('Fetching Uber orders...');
+    fetchAndSaveUberOrders();  // Using the function we imported
 
 // Schedule tasks to be run on the server
 cron.schedule('*/5 * * * *', function() {
