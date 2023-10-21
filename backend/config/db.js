@@ -25,22 +25,14 @@ async function connectDB() {
     
     // Log successful connection
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
-   // Now let's insert a document
-   const db = client.db(); // Use the database already specified in the URI
-   const collection = db.collection("testCollection"); // Choose the collection
-   
-   const result = await collection.insertOne({ name: "John Doe", age: 30 }); // Insert one document
-   
-   console.log(`Document inserted with ID: ${result.insertedId}`);
-   
- } catch (error) {
-   // Log any errors
-   console.dir(error);
- } finally {
-   // Close the client connection
-   await client.close();
- }
+
+    return client;
+} catch (error) {
+  console.dir(error);
+  return null;
+}
 }
 
 // Run the connectDB function
 connectDB();
+module.exports = { connectDB };

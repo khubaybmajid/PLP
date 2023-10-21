@@ -1,71 +1,90 @@
+const express = require('express');
 const axios = require('axios');
-const ApiToken = require('../models/ApiToken');
-const { clientID, clientSecret } = require('../config/uberAPI');
+const qs = require('qs');
+const { saveToken, getToken } = require('../models/ApiToken');
+const { UBER_CLIENT_ID, UBER_CLIENT_SECRET } = process.env;
 
-const fetchOrdersFromUber = async (startTime, endTime) => {
+const app = express();
+const PORT = process.env.PORT || 5004;
+
+app.get('/callback', async (req, res) => {
+  const authorizationCode = req.query.code;
+
   try {
-    // Retrieve existing token from MongoDB
-    const existingToken = await ApiToken.findOne({ apiName: 'uber' });
-
-    let accessToken;
-
-    // If token exists and is not expired
-    if (existingToken && new Date(existingToken.expiresAt) > new Date()) {
-      accessToken = existingToken.accessToken;
-    } else {
-      // Otherwise, refresh token or get a new one
-      const newTokens = await refreshAccessToken(); // Assume this function refreshes and returns new tokens
-      accessToken = newTokens.accessToken;
-
-      // Update the tokens in MongoDB
-      if (existingToken) {
-        existingToken.accessToken = accessToken;
-        existingToken.refreshToken = newTokens.refreshToken;
-        existingToken.expiresAt = new Date(new Date().getTime() + (newTokens.expiresIn * 1000));
-        await existingToken.save();
-      } else {
-        await ApiToken.create({
-          apiName: 'uber',
-          accessToken,
-          refreshToken: newTokens.refreshToken,
-          expiresAt: new Date(new Date().getTime() + (newTokens.expiresIn * 1000)),
-        });
-      }
-    }
-
-    const response = await axios.get('https://api.uber.com/orders', {
+    const response = await axios.post('https://login.uber.com/oauth/v2/token', qs.stringify({
+      client_id: UBER_CLIENT_ID,
+      client_secret: UBER_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      redirect_uri: 'http://localhost:5004/callback', // Make sure this matches with the redirect_uri you've registered in Uber developer console.
+      code: authorizationCode,
+    }), {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      params: {
-        'start_time': startTime,
-        'end_time': endTime,
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
     });
 
-    return response.data;
+    const accessToken = response.data.access_token;
+    const refreshToken = response.data.refresh_token;
+    const expiresIn = response.data.expires_in;
+    const expiresAt = new Date().getTime() + expiresIn * 1000;
 
+    await saveToken(accessToken, refreshToken, expiresAt);
+
+    res.redirect('/'); // Redirect to home or another page
   } catch (error) {
-    console.error('Error fetching orders from Uber:', error);
-    throw error;
+    console.error('Error in OAuth callback:', error);
+    res.status(500).send('Internal Server Error');
   }
-};
+});
 
 const refreshAccessToken = async () => {
-  try {
-    // Here you would perform the logic to refresh the access token.
-    // I'll use a placeholder object to represent the refreshed tokens.
-    return {
-      accessToken: 'new-access-token',
-      refreshToken: 'new-refresh-token',
-      expiresIn: 3600, // seconds
-    };
-  } catch (error) {
-    console.error('Error refreshing access token:', error);
-    throw error;
-  }
-};
+    const tokenData = await getToken();
+    const refreshToken = tokenData.refreshToken;
+    const response = await axios.post('https://login.uber.com/oauth/v2/token', qs.stringify({
+      client_id: UBER_CLIENT_ID,
+      client_secret: UBER_CLIENT_SECRET,
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+  
+    const newAccessToken = response.data.access_token;
+    const newRefreshToken = response.data.refresh_token;
+    const expiresIn = response.data.expires_in;
+    const expiresAt = new Date().getTime() + expiresIn * 1000;
+  
+    await saveToken(newAccessToken, newRefreshToken, expiresAt);
+    return newAccessToken;
+  };
 
-module.exports = {
-  fetchOrdersFromUber,
-};
+  const useUberAPI = async (apiEndpoint, method = 'GET', data = null) => {
+    let tokenData = await getToken();
+    let { accessToken, expiresAt } = tokenData;
+    const now = new Date().getTime();
+  
+    if (now >= expiresAt) {
+      accessToken = await refreshAccessToken();
+    }
+  
+    const options = {
+      method,
+      url: apiEndpoint,
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      },
+      data
+    };
+  
+    const response = await axios(options);
+    return response.data;
+  };
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server started on port ${PORT}`);
+});
+
+module.exports = { useUberAPI };
