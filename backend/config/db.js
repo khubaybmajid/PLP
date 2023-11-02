@@ -1,17 +1,42 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
+const { MongoClient } = require('mongodb');
 
-const connectDB = async () => {
+let client;
+let database;
+let apiTokensCollection;
+let ordersCollection;
+
+// Initialize database connection
+async function connectDB() {
+  const uri = 'mongodb+srv://nismomajid:Deqsnuqc123@platformcluster.6wpo58h.mongodb.net/?retryWrites=true&w=majority';
+   client = new MongoClient(uri);
+  
   try {
-    await mongoose.connect(process.env.MONGODB_URL, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // Connect to the MongoDB cluster
+    await client.connect();
+    console.log("Connected to MongoDB");
+
+    // Select a database
+    database = client.db('PlatformDatabase');
+    
+    // Check if collections exist, create them if they don't
+    const collections = await database.listCollections().toArray();
+    const collectionNames = collections.map(c => c.name);
+
+    if (!collectionNames.includes('apiTokens')) {
+      await database.createCollection('apiTokens');
+    }
+
+    if (!collectionNames.includes('orders')) {
+      await database.createCollection('orders');
+    }
+
+    // Define collections
+    apiTokensCollection = database.collection('apiTokens');
+    ordersCollection = database.collection('orders');
+    
   } catch (error) {
-    console.error("Error connecting to MongoDB:", error);
-    process.exit(1); // Exit process with failure
+    console.error('An error occurred:', error);
   }
-};
+}
 
 module.exports = { connectDB };

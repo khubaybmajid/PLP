@@ -1,10 +1,8 @@
 require('dotenv').config();
 const axios = require('axios');
 const qs = require('qs');
-const { saveToken, getToken } = require('../models/ApiToken');
+const { saveToken, getToken } = require('../models/ApiToken');  // Make sure the path is correct
 const { UBER_CLIENT_ID, UBER_CLIENT_SECRET } = process.env;
-
-
 
 const fetchAccessToken = async (authorizationCode) => {
   try {
@@ -13,7 +11,7 @@ const fetchAccessToken = async (authorizationCode) => {
       client_secret: UBER_CLIENT_SECRET,
       grant_type: 'authorization_code',
       redirect_uri: 'http://localhost:5004/callback',
-      code: 'authorizationCode'
+      code: authorizationCode  // Fixed this line
     }), {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',

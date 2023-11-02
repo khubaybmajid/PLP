@@ -1,8 +1,8 @@
 require('dotenv').config();
 const express = require('express');
 const router = express.Router();
-const { useUberAPI } = require('../utils/uber');
-const Order = require('../models/Order');
+const { useUberAPI } = require('../utils/uber');  // Make sure the path is correct
+const Order = require('../models/Order');  // Make sure the path is correct
 
 const UBER_API_ENDPOINT = `https://api.uber.com/v1/delivery/store/c3d4b941-c55a-4d5b-970f-802ac0625af3/orders`;
 

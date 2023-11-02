@@ -3,18 +3,17 @@ require('dotenv').config();
 
 // Import required packages
 const express = require('express');
-const { connectDB } = require('./config/db');
 const cron = require('node-cron');
 const { callback, refreshAccessToken, useUberAPI } = require('./utils/uber'); // Import from uber.js
 
 // Import your router and the fetchAndSaveUberOrders function from uberRoutes
 const { router: uberRouter, fetchAndSaveOrders: fetchAndSaveUberOrders } = require('./routes/uberRoutes');
 
+// Connect to the database using your new setup
+const { connectDB } = require('./config/db');
+
 // Initialize Express app
 const app = express();
-
-// Connect to the database
-connectDB();
 
 // Initialize Middleware
 app.use(express.json({ extended: false }));
@@ -29,13 +28,28 @@ app.get('/', (req, res) => {
   res.send('Server is up and running');
 });
 
+// Function to initialize server and other startup tasks
+async function initializeServer() {
+  try {
 
-// Start the server
-const PORT = 5004;
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+    // Start the server
+    const PORT = 5004;
+    app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+    
+    await connectDB(); // Make sure to await the database connection
+    console.log("Database connected");
+  
+    // Fetch Uber orders
+    console.log('Fetching Uber orders...');
+    fetchAndSaveUberOrders();  // Now we are sure the DB is connected
 
-console.log('Fetching Uber orders...');
-    fetchAndSaveUberOrders();  // Using the function we imported
+  } catch (error) {
+    console.log("Failed to initialize server:", error);
+  }
+}
+
+// Call initializeServer to start everything up
+initializeServer();
 
 // Schedule tasks to be run on the server
 cron.schedule('*/5 * * * *', function() {
