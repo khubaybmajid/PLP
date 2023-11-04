@@ -5,10 +5,9 @@ let database;
 let apiTokensCollection;
 let ordersCollection;
 
-// Initialize database connection
 async function connectDB() {
   const uri = 'mongodb+srv://nismomajid:Deqsnuqc123@platformcluster.6wpo58h.mongodb.net/?retryWrites=true&w=majority';
-   client = new MongoClient(uri);
+  client = new MongoClient(uri);
   
   try {
     // Connect to the MongoDB cluster
@@ -39,4 +38,8 @@ async function connectDB() {
   }
 }
 
-module.exports = { connectDB };
+// Functions to retrieve the collections
+const getApiTokensCollection = () => apiTokensCollection;
+const getOrdersCollection = () => ordersCollection;
+
+module.exports = { connectDB, getApiTokensCollection, getOrdersCollection };

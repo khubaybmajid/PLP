@@ -1,7 +1,7 @@
 require('dotenv').config();
 const axios = require('axios');
 const qs = require('qs');
-const { saveToken, getToken } = require('../models/ApiToken');  // Make sure the path is correct
+const { saveToken, getToken } = require('../models/ApiToken'); 
 const { UBER_CLIENT_ID, UBER_CLIENT_SECRET } = process.env;
 
 const fetchAccessToken = async (authorizationCode) => {
@@ -11,7 +11,7 @@ const fetchAccessToken = async (authorizationCode) => {
       client_secret: UBER_CLIENT_SECRET,
       grant_type: 'authorization_code',
       redirect_uri: 'http://localhost:5004/callback',
-      code: authorizationCode  // Fixed this line
+      code: authorizationCode  
     }), {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -32,7 +32,11 @@ const fetchAccessToken = async (authorizationCode) => {
 
 const refreshAccessToken = async () => {
   try {
-  const tokenData = await getToken();
+    const tokenData = await getToken();
+    if (!tokenData) {
+        throw new Error('No token data available in the database');
+    }
+    
   const refreshToken = tokenData.refreshToken;
 
   const response = await axios.post('https://login.uber.com/oauth/v2/token', qs.stringify({
@@ -62,7 +66,6 @@ const refreshAccessToken = async () => {
 
 const useUberAPI = async (apiEndpoint, method = 'GET', data = null) => {
   let tokenData = await getToken();
-  
   if (!tokenData) {
     console.log("Token data is null, can't proceed.");
     return;

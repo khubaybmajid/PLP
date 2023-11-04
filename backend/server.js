@@ -38,10 +38,10 @@ async function initializeServer() {
     
     await connectDB(); // Make sure to await the database connection
     console.log("Database connected");
-  
+
     // Fetch Uber orders
     console.log('Fetching Uber orders...');
-    fetchAndSaveUberOrders();  // Now we are sure the DB is connected
+    fetchAndSaveUberOrders();
 
   } catch (error) {
     console.log("Failed to initialize server:", error);

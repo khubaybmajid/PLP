@@ -1,30 +1,28 @@
-const { connectDB } = require('../config/db'); // Import the main function from your db.js file
+const { apiTokensCollection } = require('../config/db');
 
 // Save token function
 const saveToken = async (accessToken, refreshToken, expiresAt) => {
-  const client = await connectDB();
-  const db = client.db('PlatformDatabase');
-  const collection = db.collection('apiTokens');
+  try {
+    // Caution: This will delete all existing tokens in the collection
+    await apiTokensCollection.deleteMany({}); 
 
-  // Caution: This will delete all existing tokens in the collection
-  await collection.deleteMany({}); 
-
-  // Save the new token
-  await collection.insertOne({ accessToken, refreshToken, expiresAt });
+    // Save the new token
+    await apiTokensCollection.insertOne({ accessToken, refreshToken, expiresAt });
+    console.log('Token saved successfully');
+  } catch (error) {
+    console.error('Error saving token:', error);
+  }
 };
 
 // Get token function
 const getToken = async () => {
-  const client = await connectDB();
-  const db = client.db('PlatformDatabase');
-  const collection = db.collection('apiTokens');
-
-  const token = await collection.findOne({});
-
-  // Be cautious about logging sensitive information in production
-  console.log("Retrieved token: ", token);
-
-  return token;
+  try {
+    const token = await apiTokensCollection.findOne({});
+    console.log("Retrieved token: ", token);
+    return token;
+  } catch (error) {
+    console.error('Error fetching token:', error);
+  }
 };
 
 module.exports = { saveToken, getToken };
