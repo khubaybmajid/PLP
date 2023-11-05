@@ -4,10 +4,10 @@ require('dotenv').config();
 // Import required packages
 const express = require('express');
 const cron = require('node-cron');
-const { callback, refreshAccessToken, useUberAPI } = require('./utils/uber'); // Import from uber.js
+const { callback, useUberAPI } = require('./utils/uber'); // Import from uber.js
 
 // Import your router and the fetchAndSaveUberOrders function from uberRoutes
-const { router: uberRouter, fetchAndSaveOrders: fetchAndSaveUberOrders } = require('./routes/uberRoutes');
+const { router: uberRouter, fetchAndSaveOrders } = require('./routes/uberRoutes');
 
 // Connect to the database using your new setup
 const { connectDB } = require('./config/db');
@@ -41,7 +41,7 @@ async function initializeServer() {
 
     // Fetch Uber orders
     console.log('Fetching Uber orders...');
-    fetchAndSaveUberOrders();
+    await fetchAndSaveOrders();  // Fetch and save orders
 
   } catch (error) {
     console.log("Failed to initialize server:", error);
@@ -60,6 +60,6 @@ cron.schedule('*/5 * * * *', function() {
       (currentTime.getHours() >= 0 && currentTime.getHours() <= 1)) {
     
     console.log('Fetching Uber orders...');
-    fetchAndSaveUberOrders();  // Using the function we imported
+    fetchAndSaveOrders();  // Using the function we imported
   }
 });

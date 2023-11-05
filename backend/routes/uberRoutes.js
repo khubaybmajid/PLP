@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { connectDB, getApiTokensCollection } = require('../config/db');
 const express = require('express');
 const router = express.Router();
 const { useUberAPI } = require('../utils/uber'); 
@@ -25,8 +26,9 @@ router.get('/fetchUberOrders', async (req, res) => {
 });
 
 const fetchAndSaveOrders = async () => {
+  const apiTokensCollection = await getApiTokensCollection(); // Add this line
   try {
-    const uberOrders = await useUberAPI(UBER_API_ENDPOINT);
+    const uberOrders = await useUberAPI(UBER_API_ENDPOINT, apiTokensCollection); // Pass collection to useUberAPI
     await saveOrdersToMongoDB(uberOrders);
     console.log('Successfully fetched and saved Uber orders.');
   } catch (error) {
